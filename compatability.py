@@ -607,14 +607,20 @@ def build_full_prompt(
     use_case: str,
     dataset_block: str,
     compat_block: str,
+    mode: str,
 ) -> str:
+    mode = "a PC build" if mode == "Full PC build" else "to upgrade their current PC build"
+    budget_type = "all-inclusive" if mode == "a PC build" else "for new parts"
+    selection_type = "preferences" if mode == "a PC build" else "current components"
+    goal = "If a better part exists within budget — better performance, better value, better compatibility — recommend it instead and briefly explain why it's the superior choice." if mode == "a PC build " else "You should recommend new parts within the given budget with the goal of maximizing performance, value, and compatibility. This is an upgrade to their current build so recommendations should be given keeping in mind their current build and the fact that their budget excludes these parts as they already own them."
+    est = "" if mode == "a PC build" else ", only sum the price of the components that are different from the users current components"
     return f"""You are a senior PC hardware expert with deep knowledge of component \
 compatibility, current market prices, and performance benchmarking. A user is planning \
-a PC build and needs your expert guidance.
+{mode} and needs your expert guidance.
 
 You have been given two inputs to work from:
   1. A rule-based compatibility pre-check (automated, may miss edge cases or be wrong)
-  2. Dataset search results showing parts that matched the user's preferences
+  2. Dataset search results showing parts that matched the user's {selection_type}
 
 Your job is NOT to simply repeat this data back. You are the expert — use the pre-check \
 as a starting point, then apply your own knowledge to verify, correct, and expand on it.
@@ -622,7 +628,7 @@ as a starting point, then apply your own knowledge to verify, correct, and expan
 ===========================================================
 BUILD CONTEXT
 ===========================================================
-Budget      : ${budget:,.2f} USD (all-inclusive)
+Budget      : ${budget:,.2f} USD ({budget_type})
 Use Case    : {use_case}
 
 ===========================================================
@@ -637,7 +643,7 @@ The pre-check above is rule-based and has limitations. You must:
 - Add your own compatibility observations even if the automated check found nothing
 
 ===========================================================
-DATASET MATCHES  (user preferences + closest parts found)
+DATASET MATCHES  (user {selection_type} + closest parts found)
 ===========================================================
 {dataset_block}
 
@@ -647,9 +653,7 @@ Treat them as rough ballpark figures only.
 ===========================================================
 YOUR RECOMMENDATIONS
 ===========================================================
-The user's stated preferences are a STARTING POINT, not a constraint. If a better part
-exists within budget — better performance, better value, better compatibility — recommend
-it instead and briefly explain why it's the superior choice.
+The user's stated {selection_type} are a STARTING POINT, not a constraint. {goal}
 
 For each component provide a section with:
   • Your recommended part (name + model)
@@ -666,7 +670,7 @@ Be direct: if parts are incompatible, say so clearly and explain exactly why and
 to replace.
 
 **Total Estimated Cost**
-Sum of your recommended parts at current market prices. State whether it fits the budget.
+Sum of your recommended parts at current market prices{est}. State whether it fits the budget.
 If over budget, suggest which components to downgrade and by how much.
 
 **Performance Notes**
@@ -741,7 +745,7 @@ def main():
     dataset_blk  = _dataset_block(searches)
 
     # Step 4: build prompt and call GPT-4o (single call)
-    prompt          = build_full_prompt(preferences, budget, use_case, dataset_blk, compat_block)
+    prompt          = build_full_prompt(preferences, budget, use_case, dataset_blk, compat_block, "Full PC build")
     recommendations = get_recommendations(client, prompt)
 
     print(recommendations)
@@ -883,7 +887,7 @@ def run_endpoint(req: RunRequest):
     dataset_blk  = _dataset_block(searches)
 
     preferences = {c: (req.selected.get(c) or "") for c in COMPONENT_FILES}
-    prompt      = build_full_prompt(preferences, budget, use_case, dataset_blk, compat_block)
+    prompt      = build_full_prompt(preferences, budget, use_case, dataset_blk, compat_block, mode)
 
     client    = OpenAI(api_key=req.openai_api_key)
     ai_output = get_recommendations(client, prompt)
@@ -906,7 +910,7 @@ def stream_endpoint(req: RunRequest):
     dataset_blk  = _dataset_block(searches)
 
     preferences = {c: (req.selected.get(c) or "") for c in COMPONENT_FILES}
-    prompt      = build_full_prompt(preferences, budget, use_case, dataset_blk, compat_block)
+    prompt      = build_full_prompt(preferences, budget, use_case, dataset_blk, compat_block, mode)
     client      = OpenAI(api_key=req.openai_api_key)
 
     def generate():
@@ -934,7 +938,7 @@ def stream_endpoint(req: RunRequest):
             ],
         ) as stream:
             for event in stream:
-                print(event)
+                #print(event)
                 if event.type == "response.output_text.delta":
                     yield f"data: {json.dumps({'type': 'token', 'text': event.delta})}\n\n"
                 elif event.type == "content.delta":
