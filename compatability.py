@@ -824,6 +824,10 @@ class RunRequest(BaseModel):
     openai_api_key: str
 
 
+class CompatibilityRequest(BaseModel):
+    selected: dict[str, str]
+
+
 def _build_searches(selected: dict[str, str]) -> tuple[list, float, str, str]:
     """
     Parse the `selected` dict from the frontend into the structures
@@ -847,6 +851,29 @@ def _build_searches(selected: dict[str, str]) -> tuple[list, float, str, str]:
     loader   = DatasetLoader(DATASET_DIR)
     searches = search_dataset(loader, preferences)
     return searches, budget, use_case, mode
+
+
+def _selected_components(selected: dict[str, str]) -> set[str]:
+    chosen: set[str] = set()
+    for component in COMPONENT_FILES:
+        val = (selected.get(component) or "").strip()
+        if val and val != "(any)":
+            chosen.add(component)
+    return chosen
+
+
+def _filter_issues_for_selected(
+    issues: list[CompatibilityIssue],
+    selected_components: set[str],
+) -> list[CompatibilityIssue]:
+    # Show only checks where every involved component was selected.
+    if not selected_components:
+        return []
+    return [
+        issue
+        for issue in issues
+        if all(component in selected_components for component in issue.components)
+    ]
 
 
 def _fmt_compat(issues: list) -> str:
@@ -873,6 +900,18 @@ def _fmt_compat(issues: list) -> str:
     return "\n".join(lines)
 
 
+@app.post("/compatibility")
+def compatibility_endpoint(req: CompatibilityRequest):
+    """
+    Endpoint for compatibility checks
+    """
+    searches, _, _, _ = _build_searches(req.selected)
+    selected_components = _selected_components(req.selected)
+    issues = _filter_issues_for_selected(run_compatibility_check(searches), selected_components)
+    compat_text = _fmt_compat(issues)
+    return {"compat_issues": compat_text}
+
+
 @app.post("/run")
 def run_endpoint(req: RunRequest):
     """
@@ -880,8 +919,9 @@ def run_endpoint(req: RunRequest):
     Frontend sets setCompatIssues and setAiOutput from the response.
     """
     searches, budget, use_case, mode = _build_searches(req.selected)
+    selected_components = _selected_components(req.selected)
 
-    issues       = run_compatibility_check(searches)
+    issues       = _filter_issues_for_selected(run_compatibility_check(searches), selected_components)
     compat_text  = _fmt_compat(issues)
     compat_block = _compat_for_gpt(issues)
     dataset_blk  = _dataset_block(searches)
@@ -903,8 +943,9 @@ def stream_endpoint(req: RunRequest):
     Event format:  data: {"type": "compat"|"token"|"done", "text": "..."}
     """
     searches, budget, use_case, mode = _build_searches(req.selected)
+    selected_components = _selected_components(req.selected)
 
-    issues       = run_compatibility_check(searches)
+    issues       = _filter_issues_for_selected(run_compatibility_check(searches), selected_components)
     compat_text  = _fmt_compat(issues)
     compat_block = _compat_for_gpt(issues)
     dataset_blk  = _dataset_block(searches)

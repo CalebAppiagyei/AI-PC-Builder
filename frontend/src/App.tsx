@@ -57,6 +57,7 @@ const PART_FILES = [
 ] as const satisfies readonly PartDef[];
 
 type PartKey = (typeof PART_FILES)[number]["key"];
+const PART_KEYS = PART_FILES.map((part) => part.key) as PartKey[];
 
 const initialForm: FormState = {
   cpu: "",
@@ -111,7 +112,7 @@ export default function App() {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [compatIssues, setCompatIssues] = useState(
-    "Compatibility issues will appear here after you run."
+    "Compatibility issues will appear here after you select a component."
   );
   const [aiOutput, setAiOutput] = useState("AI output will appear here after you run.");
   const [isLoading, setIsLoading] = useState(false);
@@ -226,6 +227,68 @@ export default function App() {
     inputRef.current?.focus();
   }
 
+  function buildSelectedPayload(budgetOverride?: number) {
+    const effectiveBudget = budgetOverride ?? moneyToNumber(form.budget) ?? 0;
+    return {
+      CPU: form.cpu || "(any)",
+      "Video Card (GPU)": form.gpu || "(any)",
+      Motherboard: form.motherboard || "(any)",
+      "Memory (RAM)": form.ram || "(any)",
+      "Power Supply (PSU)": form.psu || "(any)",
+      Storage: form.storage || "(any)",
+      "CPU Cooler": form.cpuCooler || "(any)",
+      Monitor: form.monitor || "(any)",
+      Case: form.case || "(any)",
+      "Operating System": form.operatingSystem || "(any)",
+      "_use_case": form.primaryUse,
+      Budget: `$${effectiveBudget.toFixed(2)}`,
+      Mode: mode === "full" ? "Full PC build" : "Upgrade recommendation",
+    };
+  }
+
+  const selectedPartsSignature = useMemo(
+    () => PART_KEYS.map((key) => form[key]).join("||"),
+    [form]
+  );
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const hasSelectedPart = PART_KEYS.some((key) => form[key].trim() !== "");
+    if (!hasSelectedPart) {
+      setCompatIssues("Compatibility issues will appear here after you select a component.");
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        setCompatIssues("Checking compatibility…");
+        const res = await fetch(`${API_BASE_URL}/compatibility`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ selected: buildSelectedPayload() }),
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Server error ${res.status}: ${text}`);
+        }
+        const data = (await res.json()) as { compat_issues?: string };
+        setCompatIssues(data.compat_issues || "No compatibility issues detected.");
+      } catch (err: unknown) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : String(err);
+        setCompatIssues(`Error: ${message}`);
+      }
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [selectedPartsSignature, mode, isLoading]);
+
   async function onRun() {
     setIsLoading(true);
     setCompatIssues("Running…");
@@ -239,21 +302,7 @@ export default function App() {
         return;
       }
 
-      const selected = {
-        CPU: form.cpu || "(any)",
-        "Video Card (GPU)": form.gpu || "(any)",
-        Motherboard: form.motherboard || "(any)",
-        "Memory (RAM)": form.ram || "(any)",
-        "Power Supply (PSU)": form.psu || "(any)",
-        Storage: form.storage || "(any)",
-        "CPU Cooler": form.cpuCooler || "(any)",
-        Monitor: form.monitor || "(any)",
-        Case: form.case || "(any)",
-        "Operating System": form.operatingSystem || "(any)",
-        "_use_case": form.primaryUse,
-        Budget: `$${budget.toFixed(2)}`,
-        Mode: mode === "full" ? "Full PC build" : "Upgrade recommendation",
-      };
+      const selected = buildSelectedPayload(budget);
 
       const apiKey = import.meta.env.VITE_OPENAI_API_KEY ?? "";
 
