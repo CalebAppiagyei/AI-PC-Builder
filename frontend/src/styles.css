@@ -12,8 +12,10 @@
 *{ box-sizing: border-box; }
 
 html, body{
+  width: 100%;
   min-height: 100%;
   margin: 0;
+  display: block;
   background:
     radial-gradient(1200px 600px at 15% 0%, rgba(110,231,255,0.10), transparent 60%),
     radial-gradient(900px 500px at 80% 10%, rgba(167,139,250,0.12), transparent 55%),
@@ -23,13 +25,19 @@ html, body{
   overflow-y: auto;
 }
 
+#root{
+  width: 100%;
+  min-height: 100vh;
+}
+
 .page{
-  min-height: 100%;
+  width: 100%;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-/* No sticky, no blur */
+/* Header */
 .header{
   height: 64px;
   display: flex;
@@ -99,7 +107,7 @@ html, body{
   .grid{ grid-template-columns: 1fr; }
 }
 
-/* Panels - no blur */
+/* Panels */
 .panel{
   border: 1px solid var(--border);
   border-radius: 14px;
