@@ -6,7 +6,7 @@
 - Tyler Arb: wtylerarb@vt.edu
 - Rachana Chengari: rachanac@vt.edu
 
-AI PC Builder is a full-stack app that streamlines the PC build or upgrade process.
+AI PC Builder is a full-stack app that streamlines the PC build and upgrade process.
 
 It combines:
 - A local parts dataset search
