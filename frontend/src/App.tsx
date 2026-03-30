@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo,useEffect } from "react";
 
 import { useCatalog } from "./context/useCatalog";
 import { useCompatibility } from "./context/useCompatibility";
@@ -9,26 +9,24 @@ import { moneyToNumber, filterItems } from "./utils";
 import { initialForm, PART_FILES } from "./constants";
 
 import Selections from "./components/Selections";
-import Compatibility from "./components/Compatibility"
 import AIOutput from "./components/AIOutput";
+import ModeSelect from "./components/ModeSelect"
 
 import "./styles.css";
 
 export default function App() {
-  const [mode, setMode] = useState<Mode>("full");
   const { catalog } = useCatalog()
-  const [form, setForm] = useState<FormState>(initialForm);
   const [query, setQuery] = useState("");
-  const [openKey, setOpenKey] = useState<PartKey | null>(null);
+  const [mode, setMode] = useState<Mode>("full");
+  const [isLoading, setIsLoading] = useState(false);
+  const [form, setForm] = useState<FormState>(initialForm);
   const [isSuggestOpen, setIsSuggestOpen] = useState(false);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [openKey, setOpenKey] = useState<PartKey | null>(null);
   
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const buttonLabel = mode === "full" ? "Generate Build" : "Recommend Upgrade";
 
-  function update<K extends keyof FormState>(key: K, value: FormState[K]) {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  }
-
+  // useCallback to avoid frequent request?
   function buildSelectedPayload(budgetOverride?: number) {
     const effectiveBudget = budgetOverride ?? moneyToNumber(form.budget) ?? 0;
     return {
@@ -48,6 +46,9 @@ export default function App() {
     };
   }
 
+  const { compatIssues, setCompatIssues } = useCompatibility( form, buildSelectedPayload, isLoading, mode );
+  const { aiOutput, onRun } = useAI( setIsLoading, setCompatIssues, buildSelectedPayload, )
+
   const itemsForOpenKey = useMemo<PartItem[]>(() => {
       if (!openKey) return [];
       const file = PART_FILES.find((p) => p.key === openKey)?.file;
@@ -56,7 +57,11 @@ export default function App() {
     }, [openKey, catalog]);
 
   // bugs?
-  const filtedOptions = useMemo(() => filterItems(itemsForOpenKey, openKey, query), [openKey, query])
+  const filteredOptions = useMemo(() => filterItems(itemsForOpenKey, openKey, query), [itemsForOpenKey, openKey, query])
+
+  function update<K extends keyof FormState>(key: K, value: FormState[K]) {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  }
 
   function selectOption(value: string, label?: string) {
     if (!openKey) return;
@@ -65,13 +70,29 @@ export default function App() {
     setIsSuggestOpen(false);
   }
 
-  const { aiOutput, isLoading, onRun } = useAI(buildSelectedPayload)
-  const { compatIssues, setCompatIssues } = useCompatibility(
-    form,
-    buildSelectedPayload,
-    isLoading,
-    mode,
-  );
+  function clearSelection() {
+    if (!openKey) return;
+    update(openKey, "");
+    setQuery("");
+    setIsSuggestOpen(false);
+    inputRef.current?.focus();
+  }
+
+  // When opening a new component, reset search UI
+  useEffect(() => {
+    if (!openKey) {
+      setQuery("");
+      setIsSuggestOpen(false);
+      return;
+    }
+    // set query to current selection (optional). I prefer blank for searching.
+    setQuery("");
+    setIsSuggestOpen(false);
+
+    // focus input next tick
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }, [openKey]);
+
 
   return  (
     <div className="page">
@@ -79,18 +100,27 @@ export default function App() {
         <div className="header__title">AI PC Builder</div>
       </header>
       <main className="content">
+        <ModeSelect 
+          mode={mode} 
+          setMode={setMode}/>
         <Selections 
-          form={form}
-          update={update}
-          onRun={() => onRun(form, setCompatIssues)}
-          isLoading={isLoading}
           query={query}
-          setQuery={setQuery}
-          options={filtedOptions}
-          selectOption={selectOption}
+          form={form}
+          compatIssues={compatIssues}
+          options={filteredOptions}
+          isLoading={isLoading}
+          catalog={catalog}
+          openKey={openKey}
+          inputRef={inputRef}
+          buttonLabel={buttonLabel}
+          isSuggestOpen={isSuggestOpen}
           setOpenKey={setOpenKey}
-        />
-        <Compatibility compatIssues={compatIssues} />
+          setQuery={setQuery}
+          setIsSuggestOpen={setIsSuggestOpen}
+          update={update}
+          selectOption={selectOption}
+          clearSelection={clearSelection}
+          onRun={() => onRun(form)}/>
         <AIOutput aiOutput={aiOutput}/>
       </main> 
     </div>

@@ -4,75 +4,77 @@ import type { FormState } from "../types";
 import { API_BASE_URL } from "../constants";
 
 
-export function useAI (buildSelectedPayload: (b?: number) => any) {
+export function useAI (
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>,
+  setCompatIssues: React.Dispatch<React.SetStateAction<string>>,
+  buildSelectedPayload: (b?: number) => any, 
+) {
     const [aiOutput, setAiOutput] = useState("AI output will appear here after you run.");
-    const [isLoading, setIsLoading] = useState(false);
+    async function onRun(form: FormState) {
+      setIsLoading(true);
+      setCompatIssues("Running…");
+      setAiOutput("Running…");
 
-    async function onRun(form: FormState, setCompatIssues: (s: string) => void) {
-    setIsLoading(true);
-    setCompatIssues("Running…");
-    setAiOutput("Running…");
+      try {
+        const budget = moneyToNumber(form.budget);
+        if (budget === null) {
+          setCompatIssues("Please enter a valid budget (example: 1500).");
+          setAiOutput("—");
+          return;
+        }
 
-    try {
-      const budget = moneyToNumber(form.budget);
-      if (budget === null) {
-        setCompatIssues("Please enter a valid budget (example: 1500).");
-        setAiOutput("—");
-        return;
-      }
+        const selected = buildSelectedPayload(budget);
 
-      const selected = buildSelectedPayload(budget);
+        const apiKey = import.meta.env.VITE_OPENAI_API_KEY ?? "";
 
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY ?? "";
+        const res = await fetch(`${API_BASE_URL}/stream`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ selected, openai_api_key : apiKey })
+        });
 
-      const res = await fetch(`${API_BASE_URL}/stream`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ selected, openai_api_key : apiKey })
-      });
+        if (!res.ok || !res.body) {
+          const text = await res.text();
+          throw new Error(`Server error ${res.status}: ${text}`);
+        }
 
-      if (!res.ok || !res.body) {
-        const text = await res.text();
-        throw new Error(`Server error ${res.status}: ${text}`);
-      }
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let aiAccum = "";
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let aiAccum = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+          buffer += decoder.decode(value, {stream: true});
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
 
-        buffer += decoder.decode(value, {stream: true});
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const payload = line.slice(6).trim();
-          try {
-            const msg = JSON.parse(payload) as { type: string; text?: string };
-            if (msg.type === "compat" && msg.text) {
-              setCompatIssues(msg.text);
-            } else if (msg.type === "token" && msg.text) {
-              aiAccum += msg.text;
-              setAiOutput(aiAccum);
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const payload = line.slice(6).trim();
+            try {
+              const msg = JSON.parse(payload) as { type: string; text?: string };
+              if (msg.type === "compat" && msg.text) {
+                setCompatIssues(msg.text);
+              } else if (msg.type === "token" && msg.text) {
+                aiAccum += msg.text;
+                setAiOutput(aiAccum);
+              }
+            } catch {
+              
             }
-          } catch {
-            
           }
         }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        setCompatIssues(`Error: ${message}`);
+        setAiOutput("—");
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      setCompatIssues(`Error: ${message}`);
-      setAiOutput("—");
-    } finally {
-      setIsLoading(false);
     }
-  }
 
-  return { aiOutput, isLoading, onRun}
+  return { aiOutput, onRun}
 }

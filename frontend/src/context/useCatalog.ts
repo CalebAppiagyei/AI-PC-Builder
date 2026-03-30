@@ -3,12 +3,10 @@ import type { PartCatalog } from "../types"
 import { PART_FILES } from "../constants";
 import { loadJsonArray } from "../utils";
 
-
+// add isLoading for seperate loading state in the future sprint.
+// replaced compatIssues that used to display catalog loading error with text message in the console log.
 export function useCatalog() {
     const [catalog, setCatalog] = useState<PartCatalog>({})
-    const [compatIssues, setCompatIssues] = useState(
-        "Compatibility issues will appear here after you select a component."
-    );
 
     useEffect (() => {
         let cancelled = false;
@@ -29,9 +27,7 @@ export function useCatalog() {
             setCatalog(next);
         } catch (err) {
             console.error(err);
-            setCompatIssues(
-                "Error loading local JSON files. Make sure they exist in /public/data and are valid arrays."
-            );
+            console.log("Error loading local JSON files. Make sure they exist in /public/data and are valid arrays.")
         }
         }
 
@@ -41,5 +37,5 @@ export function useCatalog() {
         };
     }, [])
 
-    return {catalog, compatIssues}
+    return {catalog}
 }

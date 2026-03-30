@@ -1,5 +1,9 @@
 
-export default function Compatibility({compatIssues}: any) {
+type Props = {
+    compatIssues: string;
+}
+
+export default function Compatibility({compatIssues}: Props) {
     return (
         <div className="panel">
             <h2 className="panel__title">Compatibility Issues</h2>
