@@ -6,6 +6,10 @@
 - Tyler Arb: wtylerarb@vt.edu
 - Rachana Chengari: rachanac@vt.edu
 
+- Caiden Romero: (caidenromero)
+- Caleb Appiagyei (caleba04)
+- Reagan Gary (rbgary)
+
 AI PC Builder is a full-stack app that streamlines the PC build and upgrade process.
 
 It combines:
