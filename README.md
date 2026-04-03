@@ -10,6 +10,7 @@
 - Caleb Appiagyei (caleba04)
 - Reagan Gary (rbgary)
 - Jiyuan Zhang (jy1229)
+- Aneesh Tummeti (artummeti)
 
 AI PC Builder is a full-stack app that streamlines the PC build and upgrade process.
 
