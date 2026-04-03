@@ -9,6 +9,7 @@
 - Caiden Romero: (caidenromero)
 - Caleb Appiagyei (caleba04)
 - Reagan Gary (rbgary)
+- Jiyuan Zhang (jy1229)
 
 AI PC Builder is a full-stack app that streamlines the PC build and upgrade process.
 
