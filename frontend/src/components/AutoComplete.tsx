@@ -21,7 +21,8 @@ type Props = {
 
 }
 
-export default function AutoComplete({ openKey, form, query, inputRef, filteredOptions, isSuggestOpen, setQuery, setOpenKey, setIsSuggestOpen, selectOption, clearSelection, }: Props) {
+export default function AutoComplete({ openKey, form, query, inputRef, filteredOptions, isSuggestOpen,
+   setQuery, setOpenKey, setIsSuggestOpen, selectOption, clearSelection, }: Props) {
 
     const openLabel = openKey
     ? PART_FILES.find((p) => p.key === openKey)?.label ?? "Component"
