@@ -1,1 +1,6 @@
+pc_advisor.egg-info/
+__pycache__/
+*.pyc
 .env
+.coverage
+htmlcov/
