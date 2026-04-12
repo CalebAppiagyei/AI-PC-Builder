@@ -52,12 +52,25 @@ This project reduces that complexity by:
 
 ## Dependencies
 
-### Backend dependencies
+### Backend Setup
 
-Install from project root:
+**Requirements:** Python 3.10+
+
+Create and Activate Python virtual environment:
 
 ```bash
-pip install fastapi uvicorn openai python-dotenv
+python -m venv venv
+
+# Windows
+venv\Scripts\activate  
+
+# Mac/Linux
+source venv/bin/activate
+```
+Then install the project and its dependencies:
+
+```bash
+pip install -e ".[dev]"
 ```
 
 ### Frontend dependencies
