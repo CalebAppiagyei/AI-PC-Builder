@@ -5,12 +5,12 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from openai import OpenAI
 
-from .config import COMPONENT_FILES, DATASET_DIR
-from .models import CompatibilityIssue
-from .dataset import DatasetLoader, search_dataset
-from .compatibility import run_compatibility_check
-from .prompt import _compat_for_gpt, _fmt_compat, _dataset_block, build_full_prompt
-from .llm import get_recommendations
+from pc_advisor.config import COMPONENT_FILES, DATASET_DIR
+from pc_advisor.models import CompatibilityIssue
+from pc_advisor.dataset import DatasetLoader, search_dataset
+from pc_advisor.compatibility import run_compatibility_check
+from pc_advisor.prompt import _compat_for_gpt, _fmt_compat, _dataset_block, build_full_prompt
+from pc_advisor.llm import get_recommendations
 
 # ---------------------------------------------------------------------------
 # FastAPI server

@@ -111,7 +111,8 @@ Open two terminals from the project root (`AI-PC-Builder`).
 ### 1. Start backend API
 
 ```bash
-uvicorn compatability:app --reload --port 8000
+cd ./pc_advisor
+uvicorn api:app --reload --port 8000
 ```
 
 Backend runs at `http://localhost:8000`.
