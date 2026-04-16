@@ -1,4 +1,4 @@
-from .models import CompatibilityIssue, ComponentSearch, ERROR, WARNING, INFO
+from pc_advisor.models import CompatibilityIssue, ComponentSearch, ERROR, WARNING, INFO
 
 def _compat_for_gpt(issues: list[CompatibilityIssue]) -> str:
     if not issues:

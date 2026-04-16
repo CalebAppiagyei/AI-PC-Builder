@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from .models import ComponentSearch, PartMatch
-from .config import COMPONENT_FILES, MAX_SEARCH_RESULTS
+from pc_advisor.models import ComponentSearch, PartMatch
+from pc_advisor.config import COMPONENT_FILES, MAX_SEARCH_RESULTS
 
 # ---------------------------------------------------------------------------
 # Dataset loader
