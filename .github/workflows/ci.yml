@@ -28,20 +28,21 @@ jobs:
       - name: Run tests
         run: pytest --maxfail=1 --disable-warnings -q
 
-      - name: Notify Mattermost (success)
-        if: success()
+      - name: Notify Mattermost
+        if: always()
+        env:
+          MATTERMOST_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
+          JOB_STATUS: ${{ job.status }}
         run: |
-          curl -i -X POST -H 'Content-Type: application/json' \
-          -d '{
-                "text": "✅ Build succeeded for '${{ github.repository }}' on branch '${{ github.ref_name }}'"
-              }' \
-          ${{ secrets.MATTERMOST_WEBHOOK_URL }}
-
-      - name: Notify Mattermost (failure)
-        if: failure()
-        run: |
-          curl -i -X POST -H 'Content-Type: application/json' \
-          -d '{
-                "text": "❌ Build failed for '${{ github.repository }}' on branch '${{ github.ref_name }}'"
-              }' \
-          ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+          if [ "$JOB_STATUS" = "success" ]; then
+            MSG="✅ Build succeeded for $REPO on branch $BRANCH"
+          else
+            MSG="❌ Build failed for $REPO on branch $BRANCH"
+          fi
+      
+          curl -f -X POST \
+            -H "Content-Type: application/json" \
+            -d "{\"text\": \"$MSG\"}" \
+            "$MATTERMOST_URL"
