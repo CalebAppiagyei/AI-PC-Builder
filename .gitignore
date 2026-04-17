@@ -1,4 +1,10 @@
+pc_advisor.egg-info/
+__pycache__/
+*.pyc
 .env
+.coverage
+htmlcov/
+venv/
 
 # Added by GitGuard (Node.js, Vite, React, Python)
 # Local environment overrides often contain developer-specific secrets

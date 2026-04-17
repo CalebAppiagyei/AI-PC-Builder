@@ -26,3 +26,21 @@ jobs:
 
       - name: Run tests
         run: pytest --maxfail=1 --disable-warnings -q
+
+      - name: Notify Mattermost (success)
+        if: success()
+        run: |
+          curl -X POST -H 'Content-Type: application/json' \
+          -d '{
+                "text": "✅ Build succeeded for '${{ github.repository }}' on branch '${{ github.ref_name }}'"
+              }' \
+          ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+
+      - name: Notify Mattermost (failure)
+        if: failure()
+        run: |
+          curl -X POST -H 'Content-Type: application/json' \
+          -d '{
+                "text": "❌ Build failed for '${{ github.repository }}' on branch '${{ github.ref_name }}'"
+              }' \
+          ${{ secrets.MATTERMOST_WEBHOOK_URL }}

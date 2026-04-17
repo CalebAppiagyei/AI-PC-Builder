@@ -1,5 +1,9 @@
-fastapi 
-uvicorn 
 openai 
+pytestopenai
+fastapi
+uvicorn
 python-dotenv
+pydantic
 pytest
+pytest-cov
+httpx

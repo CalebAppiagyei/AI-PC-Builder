@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pc_advisor"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "openai",
+    "fastapi",
+    "uvicorn",
+    "python-dotenv",
+    "pydantic",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "httpx",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]

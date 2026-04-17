@@ -52,12 +52,25 @@ This project reduces that complexity by:
 
 ## Dependencies
 
-### Backend dependencies
+### Backend Setup
 
-Install from project root:
+**Requirements:** Python 3.10+
+
+Create and Activate Python virtual environment:
 
 ```bash
-pip install fastapi uvicorn openai python-dotenv
+python -m venv venv
+
+# Windows
+venv\Scripts\activate  
+
+# Mac/Linux
+source venv/bin/activate
+```
+Then install the project and its dependencies:
+
+```bash
+pip install -e ".[dev]"
 ```
 
 ### Frontend dependencies
@@ -98,7 +111,8 @@ Open two terminals from the project root (`AI-PC-Builder`).
 ### 1. Start backend API
 
 ```bash
-uvicorn compatability:app --reload --port 8000
+cd ./pc_advisor
+uvicorn api:app --reload --port 8000
 ```
 
 Backend runs at `http://localhost:8000`.
