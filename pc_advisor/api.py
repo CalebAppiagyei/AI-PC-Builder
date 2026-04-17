@@ -5,7 +5,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from openai import OpenAI
 
-from pc_advisor.config import COMPONENT_FILES, DATASET_DIR
+from pc_advisor.config import COMPONENT_FILES, DATASET_DIR, OPENAI_API_KEY
 from pc_advisor.models import CompatibilityIssue
 from pc_advisor.dataset import DatasetLoader, search_dataset
 from pc_advisor.compatibility import run_compatibility_check
@@ -18,6 +18,7 @@ from pc_advisor.llm import get_recommendations
 # ---------------------------------------------------------------------------
 
 app = FastAPI(title="PC Build Advisor")
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,10 +33,7 @@ app.add_middleware(
 )
 
 class RunRequest(BaseModel):
-    # The exact `selected` object built in App.tsx onRun():
-    #   keys: component names + "_use_case" + "Budget" + "Mode"
     selected: dict[str, str]
-    openai_api_key: str
 
 
 class CompatibilityRequest(BaseModel):
@@ -118,7 +116,6 @@ def run_endpoint(req: RunRequest):
     preferences = {c: (req.selected.get(c) or "") for c in COMPONENT_FILES}
     prompt      = build_full_prompt(preferences, budget, use_case, dataset_blk, compat_block, mode)
 
-    client    = OpenAI(api_key=req.openai_api_key)
     ai_output = get_recommendations(client, prompt)
 
     return {"compat_issues": compat_text, "ai_output": ai_output}
@@ -141,8 +138,6 @@ def stream_endpoint(req: RunRequest):
 
     preferences = {c: (req.selected.get(c) or "") for c in COMPONENT_FILES}
     prompt      = build_full_prompt(preferences, budget, use_case, dataset_blk, compat_block, mode)
-    client      = OpenAI(api_key=req.openai_api_key)
-
     def generate():
         # Send compat results immediately so the UI updates before AI starts
         yield f"data: {json.dumps({'type': 'compat', 'text': compat_text})}\n\n"
