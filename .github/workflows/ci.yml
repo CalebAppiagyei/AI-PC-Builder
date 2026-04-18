@@ -31,7 +31,7 @@ jobs:
       - name: Notify Mattermost
         if: always()
         env:
-          MATTERMOST_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+          MATTERMOST_URL: ${{ secrets.MATTERMOST_WEBHOOK }}
           REPO: ${{ github.repository }}
           BRANCH: ${{ github.ref_name }}
           JOB_STATUS: ${{ job.status }}
