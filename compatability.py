@@ -609,11 +609,13 @@ def build_full_prompt(
     compat_block: str,
     mode: str,
 ) -> str:
-    mode = "a PC build" if mode == "Full PC build" else "to upgrade their current PC build"
-    budget_type = "all-inclusive" if mode == "a PC build" else "for new parts"
-    selection_type = "preferences" if mode == "a PC build" else "current components"
+    is_full_build = mode == "Full PC build"
+
+    mode = "a PC build" if is_full_build else "to upgrade their current PC build"
+    budget_type = "all-inclusive" if is_full_build else "for new parts"
+    selection_type = "preferences" if is_full_build else "current components"
     goal = "If a better part exists within budget — better performance, better value, better compatibility — recommend it instead and briefly explain why it's the superior choice." if mode == "a PC build " else "You should recommend new parts within the given budget with the goal of maximizing performance, value, and compatibility. This is an upgrade to their current build so recommendations should be given keeping in mind their current build and the fact that their budget excludes these parts as they already own them."
-    est = "" if mode == "a PC build" else ", only sum the price of the components that are different from the users current components"
+    est = "" if is_full_build else ", only sum the price of the components that are different from the users current components"
     return f"""You are a senior PC hardware expert with deep knowledge of component \
 compatibility, current market prices, and performance benchmarking. A user is planning \
 {mode} and needs your expert guidance.
