@@ -31,3 +31,19 @@ export type PartDef = {
 };
 
 export type PartKey = (typeof PART_FILES)[number]["key"];
+
+export type SelectedPayload = {
+  CPU: string;
+  "Video Card (GPU)": string;
+  Motherboard: string;
+  "Memory (RAM)": string;
+  "Power Supply (PSU)": string;
+  Storage: string;
+  "CPU Cooler": string;
+  Monitor: string;
+  Case: string;
+  "Operating System": string;
+  _use_case: string;
+  Budget: string;
+  Mode: string;
+};

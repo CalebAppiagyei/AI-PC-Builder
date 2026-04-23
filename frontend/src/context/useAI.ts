@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { moneyToNumber } from "../utils";
-import type { FormState } from "../types";
+import type { FormState, SelectedPayload } from "../types";
 import { API_BASE_URL } from "../constants";
 
 
 export function useAI (
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>,
   setCompatIssues: React.Dispatch<React.SetStateAction<string>>,
-  buildSelectedPayload: (b?: number) => any, 
+  selectedPayload: SelectedPayload, 
 ) {
     const [aiOutput, setAiOutput] = useState("AI output will appear here after you run.");
     async function onRun(form: FormState) {
@@ -23,7 +23,7 @@ export function useAI (
           return;
         }
 
-        const selected = buildSelectedPayload(budget);
+        const selected = selectedPayload;
 
         const apiKey = import.meta.env.VITE_OPENAI_API_KEY ?? "";
 
