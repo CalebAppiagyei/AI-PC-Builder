@@ -931,7 +931,7 @@ def run_endpoint(req: RunRequest):
     preferences = {c: (req.selected.get(c) or "") for c in COMPONENT_FILES}
     prompt      = build_full_prompt(preferences, budget, use_case, dataset_blk, compat_block, mode)
 
-    client    = OpenAI(api_key=req.openai_api_key)
+    client    = OpenAI(api_key=get_api_key)
     ai_output = get_recommendations(client, prompt)
 
     return {"compat_issues": compat_text, "ai_output": ai_output}

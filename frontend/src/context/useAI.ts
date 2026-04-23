@@ -24,12 +24,11 @@ export function useAI (
         }
 
         const selected = selectedPayload;
-        const apiKey = import.meta.env.VITE_OPENAI_API_KEY ?? "";
 
         const res = await fetch(`${API_BASE_URL}/stream`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ selected, openai_api_key: apiKey })
+          body: JSON.stringify({ selected })
         });
 
         if (!res.ok || !res.body) {
