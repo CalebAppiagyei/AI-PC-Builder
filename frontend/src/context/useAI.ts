@@ -24,13 +24,12 @@ export function useAI (
         }
 
         const selected = selectedPayload;
-
         const apiKey = import.meta.env.VITE_OPENAI_API_KEY ?? "";
 
         const res = await fetch(`${API_BASE_URL}/stream`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ selected, openai_api_key : apiKey })
+          body: JSON.stringify({ selected, openai_api_key: apiKey })
         });
 
         if (!res.ok || !res.body) {
@@ -62,15 +61,16 @@ export function useAI (
                 aiAccum += msg.text;
                 setAiOutput(aiAccum);
               }
-            } catch {
-              
+            } catch (err) {
+              console.warn("Failed to parse SSE payload:", payload, err);
+              setCompatIssues("Received an invalid response chunk from the server.");
             }
           }
         }
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         setCompatIssues(`Error: ${message}`);
-        setAiOutput("—");
+        setAiOutput("Check error message in COMPATIBILITY ISSUES section.");
       } finally {
         setIsLoading(false);
       }
