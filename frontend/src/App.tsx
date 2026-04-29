@@ -1,4 +1,4 @@
-import { useState, useMemo,useEffect } from "react";
+import { useState, useMemo } from "react";
 
 import { useCatalog } from "./context/useCatalog";
 import { useCompatibility } from "./context/useCompatibility";
