@@ -46,16 +46,19 @@ export function usePartAutocomplete(
     inputRef.current?.focus();
   }
 
+  // When opening a new component, reset search UI
   useEffect(() => {
     if (!openKey) {
       setQuery("");
       setIsSuggestOpen(false);
       return;
     }
-
+    // set query to current selection (optional). I prefer blank for searching.
     setQuery("");
     setIsSuggestOpen(false);
-    window.setTimeout(() => inputRef.current?.focus(), 0);
+
+    // focus input next tick
+    setTimeout(() => inputRef.current?.focus(), 0);
   }, [openKey]);
 
   return {

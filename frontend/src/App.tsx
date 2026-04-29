@@ -52,22 +52,6 @@ export default function App() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  // When opening a new component, reset search UI
-  useEffect(() => {
-    if (!openKey) {
-      setQuery("");
-      setIsSuggestOpen(false);
-      return;
-    }
-    // set query to current selection (optional). I prefer blank for searching.
-    setQuery("");
-    setIsSuggestOpen(false);
-
-    // focus input next tick
-    setTimeout(() => inputRef.current?.focus(), 0);
-  }, [openKey]);
-
-
   return  (
     <div className="page">
       <header className="header">
