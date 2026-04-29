@@ -1,12 +1,13 @@
-import { useState, useRef, useMemo,useEffect } from "react";
+import { useState, useMemo,useEffect } from "react";
 
 import { useCatalog } from "./context/useCatalog";
 import { useCompatibility } from "./context/useCompatibility";
 import { useAI } from "./context/useAI";
+import { usePartAutocomplete } from "./context/usePartAutoComplete";
 
-import type { Mode, FormState, PartKey, PartItem, SelectedPayload} from "./types"
-import { moneyToNumber, filterItems } from "./utils";
-import { initialForm, PART_FILES } from "./constants";
+import type { Mode, FormState, PartItem} from "./types"
+import { buildSelectedPayload, moneyToNumber } from "./utils";
+import { initialForm, PART_FILES, PART_KEYS } from "./constants";
 
 import Selections from "./components/Selections";
 import AIOutput from "./components/AIOutput";
@@ -16,34 +17,36 @@ import "./styles.css";
 
 export default function App() {
   const { catalog } = useCatalog()
-  const [query, setQuery] = useState("");
   const [mode, setMode] = useState<Mode>("full");
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState<FormState>(initialForm);
-  const [isSuggestOpen, setIsSuggestOpen] = useState(false);
-  const [openKey, setOpenKey] = useState<PartKey | null>(null);
+
+  const {
+    query,
+    setQuery,
+    isSuggestOpen,
+    setIsSuggestOpen,
+    openKey,
+    setOpenKey,
+    inputRef,
+    filteredOptions,
+    selectOption,
+    clearSelection,
+  } = usePartAutocomplete(catalog, update);
   
-  const inputRef = useRef<HTMLInputElement | null>(null);
   const buttonLabel = mode === "full" ? "Generate Build" : "Recommend Upgrade";
 
-  const selectedPayload = useMemo<SelectedPayload>(() => ({
-    CPU: form.cpu || "(any)",
-    "Video Card (GPU)": form.gpu || "(any)",
-    Motherboard: form.motherboard || "(any)",
-    "Memory (RAM)": form.ram || "(any)",
-    "Power Supply (PSU)": form.psu || "(any)",
-    Storage: form.storage || "(any)",
-    "CPU Cooler": form.cpuCooler || "(any)",
-    Monitor: form.monitor || "(any)",
-    Case: form.case || "(any)",
-    "Operating System": form.operatingSystem || "(any)",
-    "_use_case": form.primaryUse,
-    Budget: `$${(moneyToNumber(form.budget) ?? 0).toFixed(2)}`,
-    Mode: mode === "full" ? "Full PC build" : "Upgrade recommendation",
-  }), [form, mode])
+  const selectedPayload = useMemo(
+    () => buildSelectedPayload(form, mode),
+    [form, mode]
+  )
+  const hasSelectedPart = useMemo(
+    () => PART_KEYS.some((key) => form[key].trim() !== ""),
+    [form]
+  )
 
-  const { compatIssues, setCompatIssues } = useCompatibility( form, selectedPayload, isLoading);
-  const { aiOutput, onRun } = useAI( setIsLoading, setCompatIssues, selectedPayload, )
+  const { compatIssues, setCompatIssues } = useCompatibility( hasSelectedPart, selectedPayload, isLoading);
+  const { aiOutput, onRun } = useAI( setIsLoading, setCompatIssues )
 
   const itemsForOpenKey = useMemo<PartItem[]>(() => {
       if (!openKey) return [];
@@ -52,26 +55,8 @@ export default function App() {
       return catalog[file] ?? [];
     }, [openKey, catalog]);
 
-  // bugs?
-  const filteredOptions = useMemo(() => filterItems(itemsForOpenKey, openKey, query), [itemsForOpenKey, openKey, query])
-
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
-  }
-
-  function selectOption(value: string, label?: string) {
-    if (!openKey) return;
-    update(openKey, value);
-    setQuery(label ?? value);
-    setIsSuggestOpen(false);
-  }
-
-  function clearSelection() {
-    if (!openKey) return;
-    update(openKey, "");
-    setQuery("");
-    setIsSuggestOpen(false);
-    inputRef.current?.focus();
   }
 
   // When opening a new component, reset search UI
@@ -103,7 +88,7 @@ export default function App() {
           query={query}
           form={form}
           compatIssues={compatIssues}
-          options={filteredOptions}
+          filteredOptions={filteredOptions}
           isLoading={isLoading}
           catalog={catalog}
           openKey={openKey}
@@ -116,7 +101,7 @@ export default function App() {
           update={update}
           selectOption={selectOption}
           clearSelection={clearSelection}
-          onRun={() => onRun(form)}/>
+          onRun={() => onRun(selectedPayload, moneyToNumber(form.budget))}/>
         <AIOutput aiOutput={aiOutput}/>
       </main> 
     </div>

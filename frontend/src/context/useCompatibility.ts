@@ -1,10 +1,10 @@
-import type { FormState, SelectedPayload } from "../types";
+import type { SelectedPayload } from "../types";
 import { useState, useEffect } from "react";
-import { PART_KEYS, API_BASE_URL } from "../constants";
+import { API_BASE_URL } from "../constants";
 
 
 export function useCompatibility( 
-    form: FormState, 
+    hasSelectedPart: boolean, 
     selectedPayload: SelectedPayload, 
     isLoading: boolean, 
 ) {
@@ -15,7 +15,6 @@ export function useCompatibility(
     useEffect (() => {
         if (isLoading) return;
 
-        const hasSelectedPart = PART_KEYS.some((key) => form[key].trim() !== "");
         if (!hasSelectedPart) {
             setCompatIssues("Compatibility issues will appear here after you select a component.");
             return;
@@ -54,7 +53,7 @@ export function useCompatibility(
             window.clearTimeout(timeoutId);
             controller.abort();
         };
-    }, [selectedPayload, form, isLoading])
+    }, [hasSelectedPart, selectedPayload, isLoading])
 
     return { compatIssues, setCompatIssues}
 }

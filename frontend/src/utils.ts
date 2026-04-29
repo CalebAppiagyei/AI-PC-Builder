@@ -1,4 +1,5 @@
 import type {PartItem, PartKey} from './types'
+import type { FormState, Mode, SelectedPayload } from "./types";
 
 // Ensure Json caontains valid parts
 export function isPartItem(x: unknown): x is PartItem {
@@ -52,4 +53,23 @@ export function filterItems (itemsForOpenKey: PartItem[], openKey: PartKey | nul
     }
   }
   return out;
+}
+
+
+export function buildSelectedPayload(form: FormState, mode: Mode): SelectedPayload {
+  return {
+    CPU: form.cpu || "(any)",
+    "Video Card (GPU)": form.gpu || "(any)",
+    Motherboard: form.motherboard || "(any)",
+    "Memory (RAM)": form.ram || "(any)",
+    "Power Supply (PSU)": form.psu || "(any)",
+    Storage: form.storage || "(any)",
+    "CPU Cooler": form.cpuCooler || "(any)",
+    Monitor: form.monitor || "(any)",
+    Case: form.case || "(any)",
+    "Operating System": form.operatingSystem || "(any)",
+    "_use_case": form.primaryUse,
+    Budget: `$${(moneyToNumber(form.budget) ?? 0).toFixed(2)}`,
+    Mode: mode === "full" ? "Full PC build" : "Upgrade recommendation",
+  };
 }

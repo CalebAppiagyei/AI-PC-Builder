@@ -1,29 +1,25 @@
 import { useState } from "react";
-import { moneyToNumber } from "../utils";
-import type { FormState, SelectedPayload } from "../types";
+import type { SelectedPayload } from "../types";
 import { API_BASE_URL } from "../constants";
 
 
 export function useAI (
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>,
   setCompatIssues: React.Dispatch<React.SetStateAction<string>>,
-  selectedPayload: SelectedPayload, 
 ) {
     const [aiOutput, setAiOutput] = useState("AI output will appear here after you run.");
-    async function onRun(form: FormState) {
+    
+    async function onRun(selected: SelectedPayload, budget: number | null) {
       setIsLoading(true);
       setCompatIssues("Running…");
       setAiOutput("Running…");
 
       try {
-        const budget = moneyToNumber(form.budget);
         if (budget === null) {
           setCompatIssues("Please enter a valid budget (example: 1500).");
           setAiOutput("—");
           return;
         }
-
-        const selected = selectedPayload;
 
         const res = await fetch(`${API_BASE_URL}/stream`, {
           method: "POST",
@@ -75,5 +71,5 @@ export function useAI (
       }
     }
 
-  return { aiOutput, onRun}
+  return { aiOutput, onRun }
 }

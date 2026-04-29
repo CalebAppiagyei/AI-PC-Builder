@@ -1,18 +1,13 @@
 import { PART_FILES, PRIMARY_USES } from '../constants';
-import type { FormState, PartCatalog, PartKey } from '../types';
+import type { FormState, PartCatalog, PartKey, Option } from '../types';
 import AutoComplete from './AutoComplete';
 import Compatibility from './Compatibility';
-
-type Option = {
-  label: string;
-  value: string;
-};
 
 type SelectionsProps = {
   query: string;
   form: FormState;
   compatIssues: string;
-  options: Option[];
+  filteredOptions: Option[];
   isLoading: boolean;
   catalog: PartCatalog;
   openKey: PartKey | null;
@@ -28,7 +23,7 @@ type SelectionsProps = {
   onRun: () => void;
 };
 
-export default function Selections({ query, form, compatIssues, options, isLoading, catalog, openKey, inputRef, buttonLabel, isSuggestOpen,
+export default function Selections({ query, form, compatIssues, filteredOptions, isLoading, catalog, openKey, inputRef, buttonLabel, isSuggestOpen,
    setOpenKey, setQuery, setIsSuggestOpen, update, selectOption, clearSelection, onRun }: SelectionsProps) {
     
   function toggleOpen(key: PartKey) {
@@ -74,7 +69,7 @@ export default function Selections({ query, form, compatIssues, options, isLoadi
           form={form}
           query={query}
           inputRef={inputRef}
-          filteredOptions={options}
+          filteredOptions={filteredOptions}
           isSuggestOpen={isSuggestOpen}
           setQuery={setQuery}
           setOpenKey={setOpenKey}
