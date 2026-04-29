@@ -5,9 +5,9 @@ import { useCompatibility } from "./context/useCompatibility";
 import { useAI } from "./context/useAI";
 import { usePartAutocomplete } from "./context/usePartAutoComplete";
 
-import type { Mode, FormState, PartItem} from "./types"
+import type { Mode, FormState } from "./types"
 import { buildSelectedPayload, moneyToNumber } from "./utils";
-import { initialForm, PART_FILES, PART_KEYS } from "./constants";
+import { initialForm, PART_KEYS } from "./constants";
 
 import Selections from "./components/Selections";
 import AIOutput from "./components/AIOutput";
@@ -47,13 +47,6 @@ export default function App() {
 
   const { compatIssues, setCompatIssues } = useCompatibility( hasSelectedPart, selectedPayload, isLoading);
   const { aiOutput, onRun } = useAI( setIsLoading, setCompatIssues )
-
-  const itemsForOpenKey = useMemo<PartItem[]>(() => {
-      if (!openKey) return [];
-      const file = PART_FILES.find((p) => p.key === openKey)?.file;
-      if (!file) return [];
-      return catalog[file] ?? [];
-    }, [openKey, catalog]);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
