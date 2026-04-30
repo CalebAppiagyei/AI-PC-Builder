@@ -43,6 +43,21 @@ const PRIMARY_USES = [
   "General Use",
 ] as const;
 
+
+const CATEGORY_MAP: Record<PartKey, string> = {
+  cpu: "cpus",
+  gpu: "video_cards",
+  motherboard: "motherboards",
+  ram: "memory",
+  psu: "power_supplies",
+  storage: "internal_hard_drives",
+  cpuCooler: "cpu_coolers",
+  monitor: "monitors",
+  case: "cases",
+  operatingSystem: "operating_systems",
+};
+
+
 const PART_FILES = [
   { key: "cpu", label: "CPU", file: "cpu.json" },
   { key: "gpu", label: "GPU", file: "video-card.json" },
@@ -157,34 +172,37 @@ export default function App() {
     return catalog[file] ?? [];
   }, [openKey, catalog]);
 
-  const filteredOptions = useMemo(() => {
-    if (!openKey) return [];
-    const q = normalize(query);
-    if (!q) return [];
+  // const filteredOptions = useMemo(() => {
+  //   if (!openKey) return [];
+  //   const q = normalize(query);
+  //   if (!q) return [];
 
-    // Filter + cap results so we only render a small list
-    const out: Array<{ label: string; value: string }> = [];
-    for (const item of itemsForOpenKey) {
-      // GPU: search by name OR chipset, and display both
-      if (openKey === "gpu") {
-        const chipset = typeof item.chipset === "string" ? item.chipset : "";
-        const haystack = normalize(`${item.name} ${chipset}`);
-        if (haystack.includes(q)) {
-          const label = chipset ? `${item.name} — ${chipset}` : item.name;
-          out.push({ label, value: item.name });
-          if (out.length >= 50) break;
-        }
-        continue;
-      }
+  //   // Filter + cap results so we only render a small list
+  //   const out: Array<{ label: string; value: string }> = [];
+  //   for (const item of itemsForOpenKey) {
+  //     // GPU: search by name OR chipset, and display both
+  //     if (openKey === "gpu") {
+  //       const chipset = typeof item.chipset === "string" ? item.chipset : "";
+  //       const haystack = normalize(`${item.name} ${chipset}`);
+  //       if (haystack.includes(q)) {
+  //         const label = chipset ? `${item.name} — ${chipset}` : item.name;
+  //         out.push({ label, value: item.name });
+  //         if (out.length >= 50) break;
+  //       }
+  //       continue;
+  //     }
 
-      // Default: search by name only
-      if (normalize(item.name).includes(q)) {
-        out.push({ label: item.name, value: item.name });
-        if (out.length >= 50) break; // cap to keep UI snappy
-      }
-    }
-    return out;
-  }, [openKey, query, itemsForOpenKey]);
+  //     // Default: search by name only
+  //     if (normalize(item.name).includes(q)) {
+  //       out.push({ label: item.name, value: item.name });
+  //       if (out.length >= 50) break; // cap to keep UI snappy
+  //     }
+  //   }
+  //   return out;
+  // }, [openKey, query, itemsForOpenKey]);
+
+  const [suggestions, setSuggestions] = useState<Array<{ label: string; value: string }>>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(true)
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -198,19 +216,80 @@ export default function App() {
   }
 
   // When opening a new component, reset search UI
+  // useEffect(() => {
+  //   if (!openKey) {
+  //     setQuery("");
+  //     setIsSuggestOpen(false);
+  //     return;
+  //   }
+  //   // set query to current selection (optional). I prefer blank for searching.
+  //   setQuery("");
+  //   setIsSuggestOpen(false);
+
+  //   // focus input next tick
+  //   setTimeout(() => inputRef.current?.focus(), 0);
+  // }, [openKey]);
   useEffect(() => {
-    if (!openKey) {
-      setQuery("");
-      setIsSuggestOpen(false);
+    if (!openKey || query.trim().length < 2) {
+      setSuggestions([]);
       return;
     }
-    // set query to current selection (optional). I prefer blank for searching.
-    setQuery("");
-    setIsSuggestOpen(false);
 
-    // focus input next tick
-    setTimeout(() => inputRef.current?.focus(), 0);
-  }, [openKey]);
+    const controller = new AbortController();
+
+    setLoadingSuggestions(true);
+
+    const timeout = setTimeout(async () => {
+      try {
+        const category = CATEGORY_MAP[openKey];
+        console.log(category, query);
+        const res = await fetch(`${API_BASE_URL}/parts/search`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            category,
+            query,
+          }),
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          throw new Error(`Search failed: ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        const mapped = data.map((item: any) => {
+          // GPU special display
+          if (openKey === "gpu" && item.chipset) {
+            return {
+              label: `${item.name} — ${item.chipset}`,
+              value: item.name,
+            };
+          }
+
+          return {
+            label: item.name,
+            value: item.name,
+          };
+        });
+
+        setSuggestions(mapped);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error(err);
+      } finally {
+        setLoadingSuggestions(false)
+      }
+    }, 300); // debounce
+
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [query, openKey]);
 
   function selectOption(value: string, label?: string) {
     if (!openKey) return;
@@ -309,7 +388,7 @@ export default function App() {
       const res = await fetch(`${API_BASE_URL}/stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ selected, openai_api_key : apiKey })
+        body: JSON.stringify({ selected, openai_api_key: apiKey })
       });
 
       if (!res.ok || !res.body) {
@@ -326,7 +405,7 @@ export default function App() {
         const { done, value } = await reader.read();
         if (done) break;
 
-        buffer += decoder.decode(value, {stream: true});
+        buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
         buffer = lines.pop() ?? "";
 
@@ -342,7 +421,7 @@ export default function App() {
               setAiOutput(aiAccum);
             }
           } catch {
-            
+
           }
         }
       }
@@ -459,16 +538,18 @@ export default function App() {
                       Selected: <strong>{currentSelection || "(Any)"}</strong>
                     </span>
                     <span className="muted">
-                      {query.trim() ? `Showing up to ${filteredOptions.length} matches` : "Type to search"}
+                      {query.trim() ? `Showing up to ${suggestions.length} matches` : "Type to search"}
                     </span>
                   </div>
 
                   {isSuggestOpen && query.trim().length > 0 && (
                     <div className="suggestBox" role="listbox" aria-label="Suggestions">
-                      {filteredOptions.length === 0 ? (
+                      {loadingSuggestions ? (
+                        <div className="suggestEmpty">Loading...</div>
+                      ) : suggestions.length === 0 ? (
                         <div className="suggestEmpty">No matches.</div>
                       ) : (
-                        filteredOptions.map((opt) => (
+                        suggestions.map((opt) => (
                           <button
                             key={opt.value === opt.label ? opt.value : `${opt.value}__${opt.label}`}
                             type="button"
