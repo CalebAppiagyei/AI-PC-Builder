@@ -28,6 +28,8 @@ from typing import Any, Optional
 from dotenv import load_dotenv
 from openai import OpenAI
 
+import mysql.connector
+
 try:
     from fastapi import FastAPI
     from fastapi.middleware.cors import CORSMiddleware
@@ -45,17 +47,17 @@ _SCRIPT_DIR = Path(__file__).parent
 DATASET_DIR = Path(os.environ.get("DATASET_DIR", _SCRIPT_DIR / "pc-part-dataset")) / "data" / "json"
 
 # Maps user-facing component names to dataset JSON filenames (without .json)
-COMPONENT_FILES: dict[str, str] = {
-    "CPU":                "cpu",
-    "CPU Cooler":         "cpu-cooler",
-    "Motherboard":        "motherboard",
+COMPONENT_TABLES: dict[str, str] = {
+    "CPU":                "cpus",
+    "CPU Cooler":         "cpu_coolers",
+    "Motherboard":        "motherboards",
     "Memory (RAM)":       "memory",
-    "Storage":            "internal-hard-drive",
-    "Video Card (GPU)":   "video-card",
-    "Case":               "case",
-    "Power Supply (PSU)": "power-supply",
-    "Operating System":   "os",
-    "Monitor":            "monitor",
+    "Storage":            "internal_hard_drives",
+    "Video Card (GPU)":   "video_cards",
+    "Case":               "cases",
+    "Power Supply (PSU)": "power_supplies",
+    "Operating System":   "operating_systems",
+    "Monitor":            "monitors",
 }
 
 MAX_SEARCH_RESULTS = 5
@@ -90,6 +92,66 @@ class CompatibilityIssue:
     severity:   str          # ERROR | WARNING | INFO
     components: list[str]
     message:    str
+
+load_dotenv()
+# ---------------------------------------------------------------------------
+# Database loader
+# ---------------------------------------------------------------------------
+class DatabaseLoader:
+    """Creates database connection for files"""
+    def __init__(self):
+        self.conn = mysql.connector.connect(
+            host=os.getenv("SQL_HOST"),
+            user=os.getenv("SQL_USER"),
+            password=os.getenv("SQL_PASSWORD"),
+            database=os.getenv("SQL_DATABASE")
+        )
+    def _rows_to_parts(self, rows):
+        return [dict(row) for row in rows]
+
+    def search(self, table: str, query: str) -> list[PartMatch]:
+        if not query.strip():
+            return []
+
+        tokens = query.lower().split()
+
+        where_clause = " AND ".join(["LOWER(name) LIKE %s"] * len(tokens))
+        params = [f"%{t}%" for t in tokens]
+
+        sql = f"""
+            SELECT *
+            FROM `{table}`
+            WHERE {where_clause}
+            LIMIT %s
+        """
+
+        cursor = self.conn.cursor(dictionary=True)
+        cursor.execute(sql, (*params, MAX_SEARCH_RESULTS))
+        rows = cursor.fetchall()
+
+        return [
+            PartMatch(
+                name=row["name"],
+                price=float(row["price"]) if row.get("price") else None,
+                data=row
+            )
+            for row in rows
+        ]
+
+    def top(self, table: str) -> list[PartMatch]:
+        sql = f"SELECT * FROM `{table}` LIMIT %s"
+        cursor = self.conn.cursor(dictionary=True)
+        cursor.execute(sql, (MAX_SEARCH_RESULTS,))
+        rows = cursor.fetchall()
+
+        return [
+            PartMatch(
+                name=row["name"],
+                price=float(row["price"]) if row.get("price") else None,
+                data=row
+            )
+            for row in rows
+        ]
 
 
 # ---------------------------------------------------------------------------
@@ -441,35 +503,37 @@ class CompatibilityChecker:
 # Dataset search
 # ---------------------------------------------------------------------------
 
-def search_dataset(loader: DatasetLoader, preferences: dict[str, str]) -> list[ComponentSearch]:
+def search_dataset(loader: DatabaseLoader, preferences: dict[str, str]) -> list[ComponentSearch]:
     results: list[ComponentSearch] = []
 
     print("\n" + "=" * 60)
-    print("  Searching local pc-part-dataset...")
+    print("  Searching MySQL database...")
     print("=" * 60)
 
     for component, preference in preferences.items():
-        filename = COMPONENT_FILES.get(component, "")
+        table = COMPONENT_TABLES.get(component, "")
         cs = ComponentSearch(category=component, user_preference=preference)
 
         print(f"\n  [{component}]  query: \"{preference or '(any)'}\"")
 
-        if not filename:
-            cs.error = "No dataset file mapped."
+        if not table:
+            cs.error = "No database table mapped."
             results.append(cs)
             continue
 
         try:
-            matches = loader.search(filename, preference) if preference else loader.top(filename)
+            matches = loader.search(table, preference) if preference else loader.top(table)
+
             if not matches:
                 print("    No matches found.")
-                cs.error = "No matches found in dataset."
+                cs.error = "No matches found in database."
             else:
                 for m in matches:
                     ps = f"${m.price:,.2f}" if m.price else "Price N/A"
                     print(f"    - {m.name[:55]:55s}  {ps}")
                 cs.matches = matches
-        except FileNotFoundError as exc:
+
+        except Exception as exc:  # MySQL won't throw FileNotFoundError
             cs.error = str(exc)
             print(f"    ERROR: {exc}")
 
@@ -533,7 +597,7 @@ def prompt_user_inputs() -> tuple[dict[str, str], float]:
     print("Leave a field blank if you have no preference.\n")
 
     preferences: dict[str, str] = {}
-    for component in COMPONENT_FILES:
+    for component in COMPONENT_TABLES:
         value = input(f"  {component}: ").strip()
         preferences[component] = value if value else ""
 
@@ -736,7 +800,7 @@ def main():
     use_case = preferences.pop("_use_case", "General use / gaming")
 
     # Step 2: search local dataset for matching parts
-    loader   = DatasetLoader(DATASET_DIR)
+    loader   = DatabaseLoader()
     searches = search_dataset(loader, preferences)
 
     # Step 3: run compatibility checks (zero extra API calls)
@@ -844,18 +908,18 @@ def _build_searches(selected: dict[str, str]) -> tuple[list, float, str, str]:
 
     # Build preferences — blank out "(any)" placeholders the frontend sends
     preferences: dict[str, str] = {}
-    for component in COMPONENT_FILES:
+    for component in COMPONENT_TABLES:
         val = selected.get(component, "")
         preferences[component] = "" if val in ("", "(any)") else val
 
-    loader   = DatasetLoader(DATASET_DIR)
+    loader   = DatabaseLoader()
     searches = search_dataset(loader, preferences)
     return searches, budget, use_case, mode
 
 
 def _selected_components(selected: dict[str, str]) -> set[str]:
     chosen: set[str] = set()
-    for component in COMPONENT_FILES:
+    for component in COMPONENT_TABLES:
         val = (selected.get(component) or "").strip()
         if val and val != "(any)":
             chosen.add(component)
@@ -926,7 +990,7 @@ def run_endpoint(req: RunRequest):
     compat_block = _compat_for_gpt(issues)
     dataset_blk  = _dataset_block(searches)
 
-    preferences = {c: (req.selected.get(c) or "") for c in COMPONENT_FILES}
+    preferences = {c: (req.selected.get(c) or "") for c in COMPONENT_TABLES}
     prompt      = build_full_prompt(preferences, budget, use_case, dataset_blk, compat_block, mode)
 
     client    = OpenAI(api_key=req.openai_api_key)
@@ -950,7 +1014,7 @@ def stream_endpoint(req: RunRequest):
     compat_block = _compat_for_gpt(issues)
     dataset_blk  = _dataset_block(searches)
 
-    preferences = {c: (req.selected.get(c) or "") for c in COMPONENT_FILES}
+    preferences = {c: (req.selected.get(c) or "") for c in COMPONENT_TABLES}
     prompt      = build_full_prompt(preferences, budget, use_case, dataset_blk, compat_block, mode)
     client      = OpenAI(api_key=req.openai_api_key)
 
@@ -992,3 +1056,33 @@ def stream_endpoint(req: RunRequest):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+class PartSearchRequest(BaseModel):
+    category: str
+    query: str = ""
+
+@app.post("/parts/search")
+def search_parts(req: PartSearchRequest):
+    loader = DatabaseLoader()
+
+    try:
+        component = req.category
+        q = req.query
+
+        if q.strip():
+            matches = loader.search(component, q)
+        else:
+            matches = loader.top(component)
+
+        return [
+            {
+                "name": m.name,
+                "price": m.price,
+                **m.data
+            }
+            for m in matches
+        ]
+
+    except Exception as e:
+        return {"error": str(e)}
