@@ -1,4 +1,9 @@
-export default function AIOutput({ aiOutput }: any) {
+type AIOutputProps = {
+  aiOutput: string
+}
+
+
+export default function AIOutput({ aiOutput }: AIOutputProps) {
     return (
         <section className="panel">
           {/* Bottom */}

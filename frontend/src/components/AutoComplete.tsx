@@ -1,10 +1,5 @@
 import { PART_FILES } from "../constants";
-import type { FormState, PartKey } from "../types";
-
-type Option = {
-  label: string;
-  value: string;
-};
+import type { FormState, PartKey, Option } from "../types";
 
 type Props = {
   openKey: PartKey | null;

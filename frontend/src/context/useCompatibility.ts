@@ -1,26 +1,20 @@
-import type { FormState } from "../types";
-import { useState, useEffect, useMemo } from "react";
-import { PART_KEYS, API_BASE_URL } from "../constants";
+import type { SelectedPayload } from "../types";
+import { useState, useEffect } from "react";
+import { API_BASE_URL } from "../constants";
 
-
+// Compare frontedn selections with backend compatibility data/endpoint
 export function useCompatibility( 
-    form: FormState, 
-    buildSelectedPayload: () => unknown, 
+    hasSelectedPart: boolean, 
+    selectedPayload: SelectedPayload, 
     isLoading: boolean, 
-    mode: string
 ) {
     const [compatIssues, setCompatIssues] = useState(
         "Compatibility issues will appear here after you select a component."
-    );
-    const selectedPartsSignature = useMemo(
-        () => PART_KEYS.map((key) => form[key]).join("||"),
-        [form]
     );
 
     useEffect (() => {
         if (isLoading) return;
 
-        const hasSelectedPart = PART_KEYS.some((key) => form[key].trim() !== "");
         if (!hasSelectedPart) {
             setCompatIssues("Compatibility issues will appear here after you select a component.");
             return;
@@ -34,7 +28,7 @@ export function useCompatibility(
                 const res = await fetch(`${API_BASE_URL}/compatibility`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ selected: buildSelectedPayload() }),
+                    body: JSON.stringify({ selected: selectedPayload }),
                     signal: controller.signal,
                 });
 
@@ -59,7 +53,7 @@ export function useCompatibility(
             window.clearTimeout(timeoutId);
             controller.abort();
         };
-    }, [selectedPartsSignature, mode, isLoading])
+    }, [hasSelectedPart, selectedPayload, isLoading])
 
     return { compatIssues, setCompatIssues}
 }
