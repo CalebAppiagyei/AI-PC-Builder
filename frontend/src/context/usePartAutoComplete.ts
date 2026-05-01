@@ -3,18 +3,27 @@ import { PART_FILES } from "../constants";
 import { filterItems } from "../utils";
 import type { FormState, PartCatalog, PartItem, PartKey } from "../types";
 
+// Owns autocomplete sections
+
 type UpdateForm = <K extends keyof FormState>(key: K, value: FormState[K]) => void;
 
 export function usePartAutocomplete(
   catalog: PartCatalog,
   update: UpdateForm
 ) {
-  const [query, setQuery] = useState("");
-  const [isSuggestOpen, setIsSuggestOpen] = useState(false);
-  const [openKey, setOpenKey] = useState<PartKey | null>(null);
 
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  // Autocomplete input
+  const [query, setQuery] = useState(""); 
+  // suggestion dropdoem state
+  const [isSuggestOpen, setIsSuggestOpen] = useState(false); 
+  // track pc category table
+  const [openKey, setOpenKey] = useState<PartKey | null>(null); 
+  // Autocomplet input focus
+  const inputRef = useRef<HTMLInputElement | null>(null); 
 
+
+
+  // Finds the catalog items that belong to the currently opened pc part category.
   const itemsForOpenKey = useMemo<PartItem[]>(() => {
     if (!openKey) return [];
 
@@ -24,11 +33,13 @@ export function usePartAutocomplete(
     return catalog[file] ?? [];
   }, [openKey, catalog]);
 
+  // Apply search filter condition to current category
   const filteredOptions = useMemo(
     () => filterItems(itemsForOpenKey, openKey, query),
     [itemsForOpenKey, openKey, query]
   );
 
+  // Write selected category into the form
   function selectOption(value: string, label?: string) {
     if (!openKey) return;
 
@@ -37,6 +48,7 @@ export function usePartAutocomplete(
     setIsSuggestOpen(false);
   }
 
+  // Clear current selections
   function clearSelection() {
     if (!openKey) return;
 

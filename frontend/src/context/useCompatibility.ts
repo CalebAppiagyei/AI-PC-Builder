@@ -2,7 +2,7 @@ import type { SelectedPayload } from "../types";
 import { useState, useEffect } from "react";
 import { API_BASE_URL } from "../constants";
 
-
+// Compare frontedn selections with backend compatibility data/endpoint
 export function useCompatibility( 
     hasSelectedPart: boolean, 
     selectedPayload: SelectedPayload, 
