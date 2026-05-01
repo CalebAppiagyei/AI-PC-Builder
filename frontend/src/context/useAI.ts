@@ -26,7 +26,12 @@ export function useAI (
           return;
         }
 
+<<<<<<< HEAD
         // Setup AI request
+=======
+        const selected = buildSelectedPayload(budget);
+
+>>>>>>> master
         const res = await fetch(`${API_BASE_URL}/stream`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
