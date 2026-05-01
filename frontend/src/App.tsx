@@ -6,9 +6,9 @@ import { useAI } from "./context/useAI";
 import { usePartAutocomplete } from "./context/usePartAutoComplete";
 import { usePartForm } from "./context/usePartForm"
 
-import type { Mode, FormState } from "./types"
+import type { Mode } from "./types"
 import { buildSelectedPayload, moneyToNumber } from "./utils";
-import { initialForm, PART_KEYS } from "./constants";
+import { PART_KEYS } from "./constants";
 
 import Selections from "./components/Selections";
 import AIOutput from "./components/AIOutput";
@@ -19,7 +19,7 @@ import "./styles.css";
 export default function App() {
   const { catalog } = useCatalog()
   const { form, update }  = usePartForm();
-  
+
   const [mode, setMode] = useState<Mode>("full");
   const [isLoading, setIsLoading] = useState(false);
   
