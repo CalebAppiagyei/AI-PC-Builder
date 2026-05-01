@@ -4,6 +4,7 @@ import { useCatalog } from "./context/useCatalog";
 import { useCompatibility } from "./context/useCompatibility";
 import { useAI } from "./context/useAI";
 import { usePartAutocomplete } from "./context/usePartAutoComplete";
+import { usePartForm } from "./context/usePartForm"
 
 import type { Mode, FormState } from "./types"
 import { buildSelectedPayload, moneyToNumber } from "./utils";
@@ -17,9 +18,11 @@ import "./styles.css";
 
 export default function App() {
   const { catalog } = useCatalog()
+  const { form, update }  = usePartForm();
+  
   const [mode, setMode] = useState<Mode>("full");
   const [isLoading, setIsLoading] = useState(false);
-  const [form, setForm] = useState<FormState>(initialForm);
+  
 
   const {
     query,
@@ -47,10 +50,6 @@ export default function App() {
 
   const { compatIssues, setCompatIssues } = useCompatibility( hasSelectedPart, selectedPayload, isLoading);
   const { aiOutput, onRun } = useAI( setIsLoading, setCompatIssues )
-
-  function update<K extends keyof FormState>(key: K, value: FormState[K]) {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  }
 
   return  (
     <div className="page">
