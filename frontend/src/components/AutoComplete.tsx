@@ -78,9 +78,9 @@ export default function AutoComplete({ openKey, form, query, inputRef, filteredO
                       {filteredOptions.length === 0 ? (
                         <div className="suggestEmpty">No matches.</div>
                       ) : (
-                        filteredOptions.map((opt) => (
+                        filteredOptions.map((opt, index) => (
                           <button
-                            key={opt.value === opt.label ? opt.value : `${opt.value}__${opt.label}`}
+                            key={opt.value === opt.label ? `${opt.value}__${index}` : `${opt.value}__${opt.label}_${index}`}
                             type="button"
                             className="suggestItem"
                             onMouseDown={(e) => e.preventDefault()}
