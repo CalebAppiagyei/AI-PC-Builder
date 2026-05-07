@@ -118,7 +118,7 @@ describe('filterItems', () => {
 
     expect(filterItems(gpuItems, 'gpu', '4070')).toEqual([
       {
-        label: 'ASUS TUF Gaming 鈥?rtx 4070 super',
+        label: 'ASUS TUF Gaming — rtx 4070 super',
         value: 'ASUS TUF Gaming',
       },
     ]);
