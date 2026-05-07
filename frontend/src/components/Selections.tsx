@@ -14,24 +14,18 @@ type SelectionsProps = {
   inputRef: React.RefObject<HTMLInputElement | null>;
   buttonLabel: string;
   isSuggestOpen: boolean;
-  setOpenKey: React.Dispatch<React.SetStateAction<PartKey | null>>;
   setQuery: React.Dispatch<React.SetStateAction<string>>;
   setIsSuggestOpen: React.Dispatch<React.SetStateAction<boolean>>;
   update: <K extends keyof FormState>(key: K, value: FormState[K]) => void;
+  toggleComponent: (key: PartKey) => void;
+  closeComponent: () => void;
   selectOption: (value: string, label?: string) => void;
   clearSelection: () => void;
   onRun: () => void;
 };
 
 export default function Selections({ query, form, compatIssues, filteredOptions, isLoading, catalog, openKey, inputRef, buttonLabel, isSuggestOpen,
-   setOpenKey, setQuery, setIsSuggestOpen, update, selectOption, clearSelection, onRun }: SelectionsProps) {
-    
-  function toggleOpen(key: PartKey) {
-    setOpenKey((prev) => {
-      const next = prev === key ? null : key;
-      return next;
-    });
-  }
+   setQuery, setIsSuggestOpen, update, toggleComponent, closeComponent, selectOption, clearSelection, onRun }: SelectionsProps) {
 
   return (
     <section className='grid'>
@@ -55,7 +49,7 @@ export default function Selections({ query, form, compatIssues, filteredOptions,
                 key={key}
                 type="button"
                 className={openKey === key ? "compBtn compBtn--active" : "compBtn"}
-                onClick={() => toggleOpen(key)}
+                onClick={() => toggleComponent(key)}
                 title={selectedName ? `Selected: ${displayValue}` : "No selection"}
               >
                 <span className="compBtn__label">{label}</span>
@@ -72,8 +66,8 @@ export default function Selections({ query, form, compatIssues, filteredOptions,
           filteredOptions={filteredOptions}
           isSuggestOpen={isSuggestOpen}
           setQuery={setQuery}
-          setOpenKey={setOpenKey}
           setIsSuggestOpen={setIsSuggestOpen}
+          closeComponent={closeComponent}
           selectOption={selectOption} 
           clearSelection={clearSelection}
         />

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { PART_FILES } from "../constants";
 import { filterItems } from "../utils";
 import type { FormState, PartCatalog, PartItem, PartKey } from "../types";
@@ -58,20 +58,22 @@ export function usePartAutocomplete(
     inputRef.current?.focus();
   }
 
-  // When opening a new component, reset search UI
-  useEffect(() => {
-    if (!openKey) {
-      setQuery("");
-      setIsSuggestOpen(false);
-      return;
-    }
-    // set query to current selection (optional). I prefer blank for searching.
+  function toggleComponent(key: PartKey) {
+    const next = openKey === key ? null : key;
+    setOpenKey(next);
     setQuery("");
     setIsSuggestOpen(false);
 
-    // focus input next tick
-    setTimeout(() => inputRef.current?.focus(), 0);
-  }, [openKey]);
+    if (next) {
+      window.setTimeout(() => inputRef.current?.focus(), 0);
+    }
+  }
+
+  function closeComponent() {
+    setOpenKey(null);
+    setQuery("");
+    setIsSuggestOpen(false);
+  }
 
   return {
     query,
@@ -79,9 +81,10 @@ export function usePartAutocomplete(
     isSuggestOpen,
     setIsSuggestOpen,
     openKey,
-    setOpenKey,
     inputRef,
     filteredOptions,
+    toggleComponent,
+    closeComponent,
     selectOption,
     clearSelection,
   };

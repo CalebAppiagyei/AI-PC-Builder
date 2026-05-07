@@ -9,15 +9,15 @@ type Props = {
   filteredOptions: Option[];
   isSuggestOpen: boolean;
   setQuery: React.Dispatch<React.SetStateAction<string>>;
-  setOpenKey: React.Dispatch<React.SetStateAction<PartKey | null>>;
   setIsSuggestOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  closeComponent: () => void;
   selectOption: (value: string, label?: string) => void;
   clearSelection: () => void;
 
 }
 
 export default function AutoComplete({ openKey, form, query, inputRef, filteredOptions, isSuggestOpen,
-   setQuery, setOpenKey, setIsSuggestOpen, selectOption, clearSelection, }: Props) {
+   setQuery, setIsSuggestOpen, closeComponent, selectOption, clearSelection, }: Props) {
 
     const openLabel = openKey
     ? PART_FILES.find((p) => p.key === openKey)?.label ?? "Component"
@@ -36,7 +36,7 @@ export default function AutoComplete({ openKey, form, query, inputRef, filteredO
                     <button type="button" className="smallBtn" onClick={clearSelection}>
                       Clear
                     </button>
-                    <button type="button" className="smallBtn" onClick={() => setOpenKey(null)}>
+                    <button type="button" className="smallBtn" onClick={closeComponent}>
                       Close
                     </button>
                   </div>
