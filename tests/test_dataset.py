@@ -1,4 +1,6 @@
 import pytest
+import os
+os.environ["OPENAI_API_KEY"] = "test-key"
 from unittest.mock import Mock, patch
 from pc_advisor.dataset import DatabaseLoader, PartMatch
 
