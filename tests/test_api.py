@@ -1,11 +1,7 @@
 import pytest
 from unittest.mock import Mock, patch
 from fastapi.testclient import TestClient
-
-# Mock OpenAI before importing app
-with patch('pc_advisor.api.OpenAI') as mock_openai:
-    mock_openai.return_value = Mock()
-    from pc_advisor.api import app
+from pc_advisor.api import app
 
 client = TestClient(app)
 
