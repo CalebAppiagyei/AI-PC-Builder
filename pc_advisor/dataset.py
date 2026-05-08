@@ -59,6 +59,13 @@ class DatabaseLoader:
             for row in rows
         ]
 
+    def get_all(self, table: str) -> list[dict]:
+        sql = f"SELECT * FROM `{table}`"
+        cursor = self.conn.cursor(dictionary=True)
+        cursor.execute(sql)
+        rows = cursor.fetchall()
+        return rows
+
 # ---------------------------------------------------------------------------
 # Dataset search
 # ---------------------------------------------------------------------------

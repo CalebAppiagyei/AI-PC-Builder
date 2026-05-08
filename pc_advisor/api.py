@@ -5,12 +5,14 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from openai import OpenAI
 
-from pc_advisor.config import COMPONENT_TABLES, DATASET_DIR, OPENAI_API_KEY
+from pc_advisor.config import COMPONENT_TABLES, DATASET_DIR, OPENAI_API_KEY, CATEGORY_MAPPING
 from pc_advisor.models import CompatibilityIssue
 from pc_advisor.dataset import DatabaseLoader, search_dataset
 from pc_advisor.compatibility import run_compatibility_check
 from pc_advisor.prompt import _compat_for_gpt, _fmt_compat, _dataset_block, build_full_prompt
 from pc_advisor.llm import get_recommendations
+
+
 
 # ---------------------------------------------------------------------------
 # FastAPI server
@@ -180,6 +182,21 @@ def stream_endpoint(req: RunRequest):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+@app.get("/parts/{category}")
+def get_parts(category: str):
+    component = CATEGORY_MAPPING.get(category)
+    if not component:
+        return {"error": "Invalid category"}
+    table = COMPONENT_TABLES.get(component)
+    if not table:
+        return {"error": "No table for component"}
+    loader = DatabaseLoader()
+    try:
+        parts = loader.get_all(table)
+        return parts
+    except Exception as e:
+        return {"error": str(e)}
 
 # Route to allow for searching of parts from backend 
 @app.post("/parts/search")
