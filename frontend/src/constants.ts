@@ -13,18 +13,19 @@ export const PRIMARY_USES = [
 ] as const;
 
 export const PART_FILES = [
-  { key: "cpu", label: "CPU", file: "cpu.json" },
-  { key: "gpu", label: "GPU", file: "video-card.json" },
-  { key: "motherboard", label: "Motherboard", file: "motherboard.json" },
-  { key: "ram", label: "RAM", file: "memory.json" },
-  { key: "psu", label: "PSU", file: "power-supply.json" },
-  { key: "storage", label: "Storage", file: "internal-hard-drive.json" },
-  { key: "cpuCooler", label: "CPU Cooler", file: "cpu-cooler.json" },
-  { key: "monitor", label: "Monitor", file: "monitor.json" },
-  { key: "case", label: "Case", file: "case.json" },
-  { key: "operatingSystem", label: "Operating System", file: "os.json" },
+  { key: "cpu", label: "CPU", endpoint: "cpu" },
+  { key: "gpu", label: "GPU", endpoint: "gpu" },
+  { key: "motherboard", label: "Motherboard", endpoint: "motherboard" },
+  { key: "ram", label: "RAM", endpoint: "ram" },
+  { key: "psu", label: "PSU", endpoint: "psu" },
+  { key: "storage", label: "Storage", endpoint: "storage" },
+  { key: "cpuCooler", label: "CPU Cooler", endpoint: "cpuCooler" },
+  { key: "monitor", label: "Monitor", endpoint: "monitor" },
+  { key: "case", label: "Case", endpoint: "case" },
+  { key: "operatingSystem", label: "Operating System", endpoint: "operatingSystem" },
 ] as const satisfies readonly PartDef[];
 
+type PartKey = (typeof PART_FILES)[number]["key"];
 export const PART_KEYS = PART_FILES.map((part) => part.key);
 
 export const initialForm: FormState = {

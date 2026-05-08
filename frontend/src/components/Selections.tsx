@@ -14,6 +14,7 @@ type SelectionsProps = {
   inputRef: React.RefObject<HTMLInputElement | null>;
   buttonLabel: string;
   isSuggestOpen: boolean;
+  catalogLoading: boolean;
   setOpenKey: React.Dispatch<React.SetStateAction<PartKey | null>>;
   setQuery: React.Dispatch<React.SetStateAction<string>>;
   setIsSuggestOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -24,7 +25,7 @@ type SelectionsProps = {
 };
 
 export default function Selections({ query, form, compatIssues, filteredOptions, isLoading, catalog, openKey, inputRef, buttonLabel, isSuggestOpen,
-   setOpenKey, setQuery, setIsSuggestOpen, update, selectOption, clearSelection, onRun }: SelectionsProps) {
+   setOpenKey, setQuery, setIsSuggestOpen, update, selectOption, clearSelection, onRun, catalogLoading }: SelectionsProps) {
     
   function toggleOpen(key: PartKey) {
     setOpenKey((prev) => {
@@ -71,6 +72,7 @@ export default function Selections({ query, form, compatIssues, filteredOptions,
           inputRef={inputRef}
           filteredOptions={filteredOptions}
           isSuggestOpen={isSuggestOpen}
+          catalogLoading={catalogLoading}
           setQuery={setQuery}
           setOpenKey={setOpenKey}
           setIsSuggestOpen={setIsSuggestOpen}

@@ -23,14 +23,13 @@ export function usePartAutocomplete(
 
 
 
-  // Finds the catalog items that belong to the currently opened pc part category.
   const itemsForOpenKey = useMemo<PartItem[]>(() => {
     if (!openKey) return [];
 
-    const file = PART_FILES.find((p) => p.key === openKey)?.file;
-    if (!file) return [];
+    const endpoint = PART_FILES.find((p) => p.key === openKey)?.endpoint;
+    if (!endpoint) return [];
 
-    return catalog[file] ?? [];
+    return catalog[endpoint] ?? [];
   }, [openKey, catalog]);
 
   // Apply search filter condition to current category

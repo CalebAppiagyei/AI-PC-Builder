@@ -27,7 +27,7 @@ export type FormState = {
 export type PartDef = {
   key: keyof FormState;
   label: string;
-  file: string;
+  endpoint: string;
 };
 
 export type PartKey = (typeof PART_FILES)[number]["key"];

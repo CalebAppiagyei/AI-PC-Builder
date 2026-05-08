@@ -8,6 +8,7 @@ type Props = {
   inputRef: React.RefObject<HTMLInputElement | null>;
   filteredOptions: Option[];
   isSuggestOpen: boolean;
+  catalogLoading: boolean;
   setQuery: React.Dispatch<React.SetStateAction<string>>;
   setOpenKey: React.Dispatch<React.SetStateAction<PartKey | null>>;
   setIsSuggestOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -17,7 +18,7 @@ type Props = {
 }
 
 export default function AutoComplete({ openKey, form, query, inputRef, filteredOptions, isSuggestOpen,
-   setQuery, setOpenKey, setIsSuggestOpen, selectOption, clearSelection, }: Props) {
+   setQuery, setOpenKey, setIsSuggestOpen, selectOption, clearSelection, catalogLoading, }: Props) {
 
     const openLabel = openKey
     ? PART_FILES.find((p) => p.key === openKey)?.label ?? "Component"
@@ -70,7 +71,9 @@ export default function AutoComplete({ openKey, form, query, inputRef, filteredO
 
                   {isSuggestOpen && query.trim().length > 0 && (
                     <div className="suggestBox" role="listbox" aria-label="Suggestions">
-                      {filteredOptions.length === 0 ? (
+                      {catalogLoading ? (
+                        <div className="suggestEmpty">Loading...</div>
+                      ) : filteredOptions.length === 0 ? (
                         <div className="suggestEmpty">No matches.</div>
                       ) : (
                         filteredOptions.map((opt) => (
