@@ -1,10 +1,10 @@
 import pytest
 from unittest.mock import Mock, patch
 from fastapi.testclient import TestClient
+os.environ["OPENAI_API_KEY"] = "test-key"
 from pc_advisor.api import app
 import os
 
-os.environ["OPENAI_API_KEY"] = "test-key"
 
 client = TestClient(app)
 
