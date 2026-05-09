@@ -30,9 +30,10 @@ export default function App() {
     isSuggestOpen,
     setIsSuggestOpen,
     openKey,
-    setOpenKey,
     inputRef,
     filteredOptions,
+    toggleComponent,
+    closeComponent,
     selectOption,
     clearSelection,
   } = usePartAutocomplete(catalog, update);
@@ -71,10 +72,11 @@ export default function App() {
           inputRef={inputRef}
           buttonLabel={buttonLabel}
           isSuggestOpen={isSuggestOpen}
-          setOpenKey={setOpenKey}
           setQuery={setQuery}
           setIsSuggestOpen={setIsSuggestOpen}
           update={update}
+          toggleComponent={toggleComponent}
+          closeComponent={closeComponent}
           selectOption={selectOption}
           clearSelection={clearSelection}
           onRun={() => onRun(selectedPayload, moneyToNumber(form.budget))}/>
