@@ -17,7 +17,7 @@ import ModeSelect from "./components/ModeSelect"
 import "./styles.css";
 
 export default function App() {
-  const { catalog } = useCatalog()
+  const { catalog, isLoading: catalogLoading } = useCatalog()
   const { form, update }  = usePartForm();
 
   const [mode, setMode] = useState<Mode>("full");

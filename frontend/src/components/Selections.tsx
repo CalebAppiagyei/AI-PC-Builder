@@ -65,6 +65,7 @@ export default function Selections({ query, form, compatIssues, filteredOptions,
           inputRef={inputRef}
           filteredOptions={filteredOptions}
           isSuggestOpen={isSuggestOpen}
+          catalogLoading={catalogLoading}
           setQuery={setQuery}
           setIsSuggestOpen={setIsSuggestOpen}
           closeComponent={closeComponent}

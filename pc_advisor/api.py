@@ -5,12 +5,14 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from openai import OpenAI
 
-from pc_advisor.config import COMPONENT_FILES, DATASET_DIR, OPENAI_API_KEY
+from pc_advisor.config import COMPONENT_TABLES, DATASET_DIR, OPENAI_API_KEY, CATEGORY_MAPPING
 from pc_advisor.models import CompatibilityIssue
-from pc_advisor.dataset import DatasetLoader, search_dataset
+from pc_advisor.dataset import DatabaseLoader, search_dataset
 from pc_advisor.compatibility import run_compatibility_check
 from pc_advisor.prompt import _compat_for_gpt, _fmt_compat, _dataset_block, build_full_prompt
 from pc_advisor.llm import get_recommendations
+
+
 
 # ---------------------------------------------------------------------------
 # FastAPI server
@@ -39,6 +41,10 @@ class RunRequest(BaseModel):
 class CompatibilityRequest(BaseModel):
     selected: dict[str, str]
 
+# For searching through database
+class PartSearchRequest(BaseModel):
+    category: str
+    query: str = ""
 
 def _build_searches(selected: dict[str, str]) -> tuple[list, float, str, str]:
     """
@@ -56,18 +62,18 @@ def _build_searches(selected: dict[str, str]) -> tuple[list, float, str, str]:
 
     # Build preferences — blank out "(any)" placeholders the frontend sends
     preferences: dict[str, str] = {}
-    for component in COMPONENT_FILES:
+    for component in COMPONENT_TABLES:
         val = selected.get(component, "")
         preferences[component] = "" if val in ("", "(any)") else val
 
-    loader   = DatasetLoader(DATASET_DIR)
+    loader   = DatabaseLoader()
     searches = search_dataset(loader, preferences)
     return searches, budget, use_case, mode
 
 
 def _selected_components(selected: dict[str, str]) -> set[str]:
     chosen: set[str] = set()
-    for component in COMPONENT_FILES:
+    for component in COMPONENT_TABLES:
         val = (selected.get(component) or "").strip()
         if val and val != "(any)":
             chosen.add(component)
@@ -113,7 +119,7 @@ def run_endpoint(req: RunRequest):
     compat_block = _compat_for_gpt(issues)
     dataset_blk  = _dataset_block(searches)
 
-    preferences = {c: (req.selected.get(c) or "") for c in COMPONENT_FILES}
+    preferences = {c: (req.selected.get(c) or "") for c in COMPONENT_TABLES}
     prompt      = build_full_prompt(preferences, budget, use_case, dataset_blk, compat_block, mode)
 
     ai_output = get_recommendations(client, prompt)
@@ -136,7 +142,7 @@ def stream_endpoint(req: RunRequest):
     compat_block = _compat_for_gpt(issues)
     dataset_blk  = _dataset_block(searches)
 
-    preferences = {c: (req.selected.get(c) or "") for c in COMPONENT_FILES}
+    preferences = {c: (req.selected.get(c) or "") for c in COMPONENT_TABLES}
     prompt      = build_full_prompt(preferences, budget, use_case, dataset_blk, compat_block, mode)
     def generate():
         # Send compat results immediately so the UI updates before AI starts
@@ -176,3 +182,40 @@ def stream_endpoint(req: RunRequest):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+@app.get("/parts/{category}")
+def get_parts(category: str):
+    component = CATEGORY_MAPPING.get(category)
+    if not component:
+        return {"error": "Invalid category"}
+    table = COMPONENT_TABLES.get(component)
+    if not table:
+        return {"error": "No table for component"}
+    loader = DatabaseLoader()
+    try:
+        parts = loader.get_all(table)
+        return parts
+    except Exception as e:
+        return {"error": str(e)}
+
+# Route to allow for searching of parts from backend 
+@app.post("/parts/search")
+def search_parts(req: PartSearchRequest):
+    loader = DatabaseLoader()
+    try:
+        component = req.category
+        q = req.query
+        if q.strip():
+            matches = loader.search(component, q)
+        else:
+            matches = loader.top(component)
+        return [
+            {
+                "name": m.name,
+                "price": m.price,
+                **m.data
+            }
+            for m in matches
+        ]
+    except Exception as e:
+        return {"error": str(e)}

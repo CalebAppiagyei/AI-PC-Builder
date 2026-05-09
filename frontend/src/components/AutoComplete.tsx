@@ -8,6 +8,7 @@ type Props = {
   inputRef: React.RefObject<HTMLInputElement | null>;
   filteredOptions: Option[];
   isSuggestOpen: boolean;
+  catalogLoading: boolean;
   setQuery: React.Dispatch<React.SetStateAction<string>>;
   setIsSuggestOpen: React.Dispatch<React.SetStateAction<boolean>>;
   closeComponent: () => void;
@@ -70,7 +71,9 @@ export default function AutoComplete({ openKey, form, query, inputRef, filteredO
 
                   {isSuggestOpen && query.trim().length > 0 && (
                     <div className="suggestBox" role="listbox" aria-label="Suggestions">
-                      {filteredOptions.length === 0 ? (
+                      {catalogLoading ? (
+                        <div className="suggestEmpty">Loading...</div>
+                      ) : filteredOptions.length === 0 ? (
                         <div className="suggestEmpty">No matches.</div>
                       ) : (
                         filteredOptions.map((opt, index) => (
